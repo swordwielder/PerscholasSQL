@@ -1,0 +1,200 @@
+-- USE CDW_SAPP;
+SET SQL_SAFE_UPDATES = 0;
+
+SELECT 
+    *
+FROM
+    CDW_SAPP_CREDITCARD;
+SELECT 
+    *
+FROM
+    CDW_SAPP_CUSTOMER;
+SELECT 
+    *
+FROM
+    CDW_SAPP_BRANCH;
+
+PREPARE stmt1 FROM
+"
+SELECT 
+    CDW_SAPP_CREDITCARD.*
+FROM
+    CDW_SAPP_CREDITCARD
+        LEFT JOIN
+    CDW_SAPP_CUSTOMER USING (CREDIT_CARD_NO)
+WHERE
+    CUST_ZIP = ? AND MONTH = ?
+        AND YEAR = ?
+ORDER BY DAY DESC"; 
+set @ant = 2018;
+set @duchin = 39120;
+set @rich = 12;
+execute stmt1 using @duchin,@rich,@ant;
+
+
+-- CREDIT CARD 2.1.1 - 2
+-- SELECT 
+--     COUNT(TRANSACTION_VALUE) AS 'Total Number',
+--     SUM(TRANSACTION_VALUE) AS 'Total Value',
+--     TRANSACTION_TYPE
+-- FROM
+--     CDW_SAPP_CREDITCARD
+-- GROUP BY TRANSACTION_TYPE;
+
+PREPARE stmt2 FROM
+"
+SELECT 
+    COUNT(TRANSACTION_VALUE) AS 'Total Number',
+    FORMAT(SUM(TRANSACTION_VALUE),2) AS 'Total Value',
+    TRANSACTION_TYPE
+FROM
+    CDW_SAPP_CREDITCARD
+GROUP BY TRANSACTION_TYPE
+HAVING TRANSACTION_TYPE = ?";
+set @som = 'Education';
+execute stmt2 using @som;
+
+-- in java
+-- SELECT 
+--     SUM(transaction_value), COUNT(*)
+-- FROM
+--     CDW_SAPP_CREDITCARD
+-- WHERE
+--     TRANSACTION_TYPE = 'Education'
+-- GROUP BY TRANSACTION_TYPE;
+-- 3
+SELECT 
+    COUNT(TRANSACTION_VALUE) AS 'Total Number',
+    FORMAT(SUM(TRANSACTION_VALUE), 2) AS 'Total Value',
+    BRANCH_STATE
+FROM
+    CDW_SAPP_CREDITCARD
+        JOIN
+    CDW_SAPP_BRANCH USING (BRANCH_CODE)
+GROUP BY BRANCH_STATE
+HAVING BRANCH_STATE = 'AL';
+
+-- 4
+PREPARE stmt4 FROM
+"
+SELECT 
+    *
+FROM
+    CDW_SAPP_CUSTOMER 
+WHERE
+    SSN LIKE ?
+AND CREDIT_CARD_NO = ? ";
+set @ssn = 123456100;
+set @credit = 4210653310061055;
+execute stmt4 using @ssn, @credit;
+
+
+        
+-- 5
+
+
+SELECT 
+    *
+FROM
+    CDW_SAPP_CUSTOMER
+WHERE
+    SSN LIKE 123456100
+        AND CREDIT_CARD_NO = 4210653310061055;
+
+PREPARE stmt5 FROM
+"
+UPDATE CDW_SAPP_CUSTOMER
+SET First_Name = ?
+WHERE SSN = ?
+AND CREDIT_CARD_NO = ? ";
+
+set @entry1 = 'Alec';
+set @ss = 123456100;
+set @cred = 4210653310061055;
+execute stmt5 using @entry1,@ss,@cred;
+SELECT 
+    *
+FROM
+    CDW_SAPP_CUSTOMER
+WHERE
+    SSN LIKE 123456100
+        AND CREDIT_CARD_NO = 4210653310061055;
+        
+-- UPDATE CDW_SAPP_CUSTOMER 
+-- SET 
+--     FIRST_NAME = 'Alec'
+-- WHERE
+--     SSN = 123456100
+--         AND CREDIT_CARD_NO = 4210653310061055;
+SELECT 
+    *
+FROM
+    CDW_SAPP_CUSTOMER
+WHERE
+    SSN LIKE 123456100
+        AND CREDIT_CARD_NO = 4210653310061055;
+
+
+
+
+
+
+-- 6
+PREPARE stmt6 FROM
+"
+SELECT 
+    FORMAT(SUM(TRANSACTION_VALUE), 2) AS 'Monthly Expense'
+FROM
+    CDW_SAPP_CREDITCARD
+WHERE
+    YEAR = ? AND MONTH = ?
+GROUP BY MONTH";
+set @ye = 2018;
+set @mo = 2;
+execute stmt6 using @ye, @mo;
+
+-- 6-B
+PREPARE stmt6B FROM
+"
+SELECT 
+    *
+FROM
+    CDW_SAPP_CREDITCARD
+WHERE
+    YEAR = ? AND MONTH = ? AND CUST_SSN = ?
+AND CREDIT_CARD_NO = ?
+ORDER BY DAY ASC";
+set @year6= 2018;
+set @month6= 12;
+set @ssn6=123456100;
+set @cd6=4210653310061055;
+execute stmt6B using @year6,@month6,@ssn6,@cd6;
+
+
+-- 7 
+PREPARE stmt7 FROM
+"
+SELECT 
+    RIGHT(CUST_SSN, 4) AS Last4Social,
+    CREDIT_CARD_NO,
+    BRANCH_CODE,
+    TRANSACTION_VALUE,
+    TRANSACTION_TYPE,
+    STR_TO_DATE(CONCAT(YEAR, '/', MONTH, '/', DAY),
+            '%Y/%m/%d') AS 'DateFormat'
+FROM
+    CDW_SAPP_CREDITCARD
+WHERE
+	CUST_SSN = ? AND CREDIT_CARD_NO = ? AND STR_TO_DATE(CONCAT(YEAR, '/', MONTH, '/', DAY),
+            '%Y/%m/%d') BETWEEN ? AND ?
+ORDER BY DateFormat DESC";
+set @ssn7 = 123459988;
+set @credit7 = 4210653349028689;
+set @date2= '2018-10-20';
+set @date1 = '2018-12-28';
+execute stmt7 using @ssn7, @credit7, @date2,@date1;
+
+
+
+
+
